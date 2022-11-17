@@ -78,5 +78,37 @@ namespace ColorCube
             h = (h / 6.0f) % 1.0f;
             return new Vector3(h, s, v);
         }
+
+        public static Vector3 HsvToRgb(Vector3 hsv)
+        {
+            float h = hsv.X, s = hsv.Y, v = hsv.Z;
+
+            if (s == 0.0)
+            {
+                return new Vector3(v, v, v);
+            }
+
+            h %= 1.0f;
+            if (h < 0)
+            {
+                h += 1;
+            }
+
+            var i = (int)(h * 6);
+            var f = (h * 6) - i;
+            var p = v * (1 - s);
+            var q = v * (1 - s * f);
+            var t = v * (1 - s * (1 - f));
+
+            return (i % 6) switch
+            {
+                0 => new Vector3(v, t, p),
+                1 => new Vector3(q, v, p),
+                2 => new Vector3(p, v, t),
+                3 => new Vector3(p, q, v),
+                4 => new Vector3(t, p, v),
+                _ => new Vector3(v, p, q),
+            };
+        }
     }
 }

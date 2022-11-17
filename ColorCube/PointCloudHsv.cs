@@ -8,6 +8,8 @@ namespace ColorCube
     {
         private const float HsvRadius = 160.0f;
 
+        private const int Quality = 10;
+
         public override VertexPositionNormalTexture[] ColorsToVertexes(Color[] colors)
         {
             var verts = PrepareColorsVertexes(colors);
@@ -30,32 +32,22 @@ namespace ColorCube
 
         public override VertexPositionNormalTexture[] MakeOutline()
         {
-            const int quality = 100;
-            var outline = new VertexPositionNormalTexture[quality * 2 * 2];
+            var outline = new VertexPositionNormalTexture[Quality * 2 * 2];
 
-            for (int i = 0; i < outline.Length; ++i)
+            for (var i = 0; i < outline.Length; ++i)
             {
                 outline[i].TextureCoordinate = new Vector2(0);
             }
 
-            for (int idx = 0; idx < quality; ++idx)
+            for (var idx = 0; idx < Quality; ++idx)
             {
-                int i1 = idx * 2 + 1, i2 = (idx * 2 + 2) % (quality * 2);
-                int i3 = i1 + quality * 2, i4 = i2 + quality * 2;
+                var i1 = idx * 2 + 1;
+                var i2 = (i1 + 1) % (Quality * 2);
+                var i3 = i1 + Quality * 2;
+                var i4 = i2 + Quality * 2;
 
-                var h = (float)(idx + 1) / quality;
-                int i = (int)(h * 6);
-                var f = (h * 6.0f) - i;
-                var q = 1.0f - f;
-                var color = (i % 6) switch
-                {
-                    0 => new Vector3(1, f, 0),
-                    1 => new Vector3(q, 1, 0),
-                    2 => new Vector3(0, 1, f),
-                    3 => new Vector3(0, q, 1),
-                    4 => new Vector3(f, 0, 1),
-                    5 => new Vector3(1, 0, q),
-                };
+                var h = (float)(idx + 0.5f) / Quality;
+                var color = ColorUtils.HsvToRgb(new Vector3(h, 1, 1));
 
                 outline[i1].Normal = outline[i2].Normal = outline[i3].Normal = outline[i4].Normal = color;
                 var x = MathF.Cos(h * MathF.PI * 2) * HsvRadius + 127.5f;

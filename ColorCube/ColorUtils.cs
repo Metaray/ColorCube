@@ -12,19 +12,33 @@ namespace ColorCube
 
             using (var bitmap = new System.Drawing.Bitmap(path))
             {
-                for (int y = 0; y < bitmap.Height; y++)
+                var data = bitmap.LockBits(
+                    new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height),
+                    System.Drawing.Imaging.ImageLockMode.ReadOnly,
+                    System.Drawing.Imaging.PixelFormat.Format24bppRgb
+                );
+
+                unsafe
                 {
-                    for (int x = 0; x < bitmap.Width; x++)
+                    var scan = (byte*)data.Scan0;
+
+                    for (int y = 0; y < bitmap.Height; y++)
                     {
-                        var clr = bitmap.GetPixel(x, y);
-                        int idx = (clr.R << 16) | (clr.G << 8) | clr.B;
-                        if (!hasColor[idx])
+                        for (int x = 0; x < bitmap.Width; x++)
                         {
-                            uniqueCount++;
-                            hasColor[idx] = true;
+                            var idx = x * 3 + data.Stride * y;
+                            var clr = (scan[idx + 2] << 16) | (scan[idx + 1] << 8) | scan[idx + 0];
+                            
+                            if (!hasColor[clr])
+                            {
+                                uniqueCount++;
+                                hasColor[clr] = true;
+                            }
                         }
                     }
                 }
+
+                bitmap.UnlockBits(data);
             }
 
             var uniqColors = new Color[uniqueCount];

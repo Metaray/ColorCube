@@ -79,16 +79,16 @@ namespace ColorCube
 
             Task.Run(() =>
             {
-                Console.WriteLine("Getting Colors");
+                Trace.WriteLine("Getting Colors");
                 if (System.IO.File.Exists(filePath))
                 {
                     imageColors = ColorUtils.ImageUniqueColors(filePath);
-                    Console.WriteLine("Found {0} colors", imageColors.Length);
+                    Trace.WriteLine($"Found {imageColors.Length} colors");
                     UpdateDisplayMode(ColorsDisplayMode.RGB);
                 }
                 else
                 {
-                    Console.WriteLine("File \"{0}\" doesn't exist", filePath);
+                    Trace.WriteLine($"File \"{filePath}\" doesn't exist");
                 }
             });
             outlineVerts = new PointCloudRgb().MakeOutline();

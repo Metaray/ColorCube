@@ -50,18 +50,49 @@ namespace ColorCube
             lastKeyboardState = currentKeyboardState = Keyboard.GetState();
 
             const float aspect = (float)Width / Height;
+
             //mProjection = Matrix.CreatePerspectiveFieldOfView(
             //    MathHelper.ToRadians(80f),
             //    ascpect,
             //    1f, 550f
             //);
+
             const float orthoSize = 400;
             mProjection = Matrix.CreateOrthographic(
                 orthoSize * aspect, orthoSize,
                 0, 550
             );
 
+            Window.FileDrop += OnFileDrop;
+
             base.Initialize();
+        }
+
+        private void OnFileDrop(object sender, FileDropEventArgs e)
+        {
+            if (e.Files.Length > 0)
+            {
+                ScheduleLoadImage(e.Files[0]);
+            }
+        }
+
+        private void ScheduleLoadImage(string path)
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    Trace.WriteLine("Getting Colors");
+                    imageColors = ColorUtils.ImageUniqueColors(path);
+
+                    Trace.WriteLine($"Image has {imageColors.Length} colors");
+                    UpdateDisplayMode(colorsDisplayMode);
+                }
+                catch (Exception ex)
+                {
+                    Trace.TraceError(ex.ToString());
+                }
+            });
         }
 
         protected override void LoadContent()
@@ -70,28 +101,13 @@ namespace ColorCube
 
             spatialColorEffect = Content.Load<Effect>("mainshader");
 
-            string filePath = "test.png";
             var args = Environment.GetCommandLineArgs();
             if (args.Length >= 2)
             {
-                filePath = args[1];
+                ScheduleLoadImage(args[1]);
             }
 
-            Task.Run(() =>
-            {
-                Trace.WriteLine("Getting Colors");
-                if (System.IO.File.Exists(filePath))
-                {
-                    imageColors = ColorUtils.ImageUniqueColors(filePath);
-                    Trace.WriteLine($"Found {imageColors.Length} colors");
-                    UpdateDisplayMode(ColorsDisplayMode.RGB);
-                }
-                else
-                {
-                    Trace.WriteLine($"File \"{filePath}\" doesn't exist");
-                }
-            });
-            outlineVerts = new PointCloudRgb().MakeOutline();
+            UpdateDisplayMode(colorsDisplayMode);
         }
 
         protected override void Update(GameTime gameTime)
@@ -126,11 +142,17 @@ namespace ColorCube
 
             if (currentKeyboardState.IsKeyDown(Keys.F1) && lastKeyboardState.IsKeyUp(Keys.F1))
             {
-                UpdateDisplayMode(ColorsDisplayMode.RGB);
+                if (colorsDisplayMode != ColorsDisplayMode.RGB)
+                {
+                    UpdateDisplayMode(ColorsDisplayMode.RGB);
+                }
             }
             else if (currentKeyboardState.IsKeyDown(Keys.F2) && lastKeyboardState.IsKeyUp(Keys.F2))
             {
-                UpdateDisplayMode(ColorsDisplayMode.HSV);
+                if (colorsDisplayMode != ColorsDisplayMode.HSV)
+                {
+                    UpdateDisplayMode(ColorsDisplayMode.HSV);
+                }
             }
 
             base.Update(gameTime);
@@ -139,6 +161,7 @@ namespace ColorCube
         protected override void Draw(GameTime gameTime)
         {
             if (!IsActive) return;
+
             //Debug.WriteLine("{0}", gameTime.ElapsedGameTime);
             GraphicsDevice.Clear(backgroundSelect == 0 ? Color.Black : Color.White);
 
@@ -178,28 +201,25 @@ namespace ColorCube
 
         private void UpdateDisplayMode(ColorsDisplayMode newMode)
         {
-            if (imageColors != null && (particlesVbuf == null || newMode != colorsDisplayMode))
+            colorsDisplayMode = newMode;
+
+            outlineVerts = newMode switch
             {
-                colorsDisplayMode = newMode;
+                ColorsDisplayMode.RGB => new PointCloudRgb().MakeOutline(),
+                ColorsDisplayMode.HSV => new PointCloudHsv().MakeOutline(),
+                _ => throw new NotImplementedException()
+            };
 
-                outlineVerts = newMode switch
-                {
-                    ColorsDisplayMode.RGB => new PointCloudRgb().MakeOutline(),
-                    ColorsDisplayMode.HSV => new PointCloudHsv().MakeOutline(),
-                    _ => throw new ArgumentException()
-                };
-
+            if (imageColors != null)
+            {
                 var particlesVerts = newMode switch
                 {
                     ColorsDisplayMode.RGB => new PointCloudRgb().ColorsToVertexes(imageColors),
                     ColorsDisplayMode.HSV => new PointCloudHsv().ColorsToVertexes(imageColors),
-                    _ => throw new ArgumentException()
+                    _ => throw new NotImplementedException()
                 };
 
-                if (particlesVbuf == null)
-                {
-                    particlesVbuf = new VertexBuffer(GraphicsDevice, VertexPositionNormalTexture.VertexDeclaration, particlesVerts.Length, BufferUsage.WriteOnly);
-                }
+                particlesVbuf ??= new VertexBuffer(GraphicsDevice, VertexPositionNormalTexture.VertexDeclaration, particlesVerts.Length, BufferUsage.WriteOnly);
                 particlesVbuf.SetData(particlesVerts);
             }
         }

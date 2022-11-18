@@ -8,7 +8,7 @@ namespace ColorCube
     {
         private const float HsvRadius = 160.0f;
 
-        private const int Quality = 10;
+        private const int Quality = 100;
 
         public override VertexPositionNormalTexture[] ColorsToVertexes(Color[] colors)
         {

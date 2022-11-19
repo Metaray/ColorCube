@@ -219,7 +219,10 @@ namespace ColorCube
                     _ => throw new NotImplementedException()
                 };
 
-                particlesVbuf ??= new VertexBuffer(GraphicsDevice, VertexPositionNormalTexture.VertexDeclaration, particlesVerts.Length, BufferUsage.WriteOnly);
+                if (particlesVbuf == null || particlesVbuf.VertexCount != particlesVerts.Length)
+                {
+                    particlesVbuf = new VertexBuffer(GraphicsDevice, VertexPositionNormalTexture.VertexDeclaration, particlesVerts.Length, BufferUsage.WriteOnly);
+                }
                 particlesVbuf.SetData(particlesVerts);
             }
         }

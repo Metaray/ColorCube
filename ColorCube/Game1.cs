@@ -118,6 +118,7 @@ namespace ColorCube
             currentKeyboardState = Keyboard.GetState();
 
             if (!IsActive) return;
+            Trace.WriteLine($"Update {gameTime.ElapsedGameTime}");
 
             if (currentMouseState.LeftButton == ButtonState.Pressed)
             {
@@ -161,8 +162,8 @@ namespace ColorCube
         protected override void Draw(GameTime gameTime)
         {
             if (!IsActive) return;
+            Trace.WriteLine($"Draw {gameTime.ElapsedGameTime}");
 
-            //Debug.WriteLine("{0}", gameTime.ElapsedGameTime);
             GraphicsDevice.Clear(backgroundSelect == 0 ? Color.Black : Color.White);
 
             // Camera looks into -Z (XY aligned with right+down, Z points to viewer, left hand rule)
@@ -175,9 +176,7 @@ namespace ColorCube
             // 3) Place camera behind object
             mView = Matrix.CreateTranslation(0, 0, -300);
 
-            spatialColorEffect.Parameters["World"].SetValue(mWorld);
-            spatialColorEffect.Parameters["View"].SetValue(mView);
-            spatialColorEffect.Parameters["Projection"].SetValue(mProjection);
+            spatialColorEffect.Parameters["WorldViewProjection"].SetValue(mWorld * mView * mProjection);
             spatialColorEffect.Parameters["InvScreenSize"].SetValue(new Vector2(1.0f / Width, 1.0f / Height));
 
             foreach (EffectPass pass in spatialColorEffect.CurrentTechnique.Passes)

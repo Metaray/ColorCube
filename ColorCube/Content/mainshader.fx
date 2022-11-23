@@ -8,9 +8,7 @@
     #define PS_SHADERMODEL ps_4_0_level_9_3
 #endif
 
-float4x4 World;
-float4x4 View;
-float4x4 Projection;
+float4x4 WorldViewProjection;
 float2 InvScreenSize;
 
 struct VertexShaderInput
@@ -28,10 +26,7 @@ struct VertexShaderOutput
 
 VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
 {
-    float4 worldPosition = mul(input.Position, World);
-    float4 viewPosition = mul(worldPosition, View);
-    //viewPosition += input.Displacemet;
-    float4 projPosition = mul(viewPosition, Projection);
+    float4 projPosition = mul(input.Position, WorldViewProjection);
     projPosition.xy += input.Displacemet * projPosition.w * InvScreenSize;
 
     VertexShaderOutput output;

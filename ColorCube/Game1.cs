@@ -213,8 +213,8 @@ namespace ColorCube
             {
                 var particlesVerts = newMode switch
                 {
-                    ColorsDisplayMode.RGB => new PointCloudRgb().ColorsToVertexes(imageColors),
-                    ColorsDisplayMode.HSV => new PointCloudHsv().ColorsToVertexes(imageColors),
+                    ColorsDisplayMode.RGB => new PointCloudRgb().ColorsToVertexData(imageColors),
+                    ColorsDisplayMode.HSV => new PointCloudHsv().ColorsToVertexData(imageColors),
                     _ => throw new NotImplementedException()
                 };
 

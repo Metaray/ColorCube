@@ -5,18 +5,16 @@ namespace ColorCube
 {
     public class PointCloudRgb : PointCloud
     {
-        public override VertexPositionNormalTexture[] ColorsToVertexes(Color[] colors)
+        public override Vector3[] ColorsToPositions(Color[] colors)
         {
-            var verts = PrepareColorsVertexes(colors);
+            var verts = new Vector3[colors.Length];
+
             for (int i = 0; i < colors.Length; i++)
             {
-                // pos = RGB
-                var pos = colors[i].ToVector3() * 255;
-                for (int j = 0; j < 6; ++j)
-                {
-                    verts[i * 6 + j].Position = pos;
-                }
+                // RGB cube centered on (127.5, 127.5, 127.5)
+                verts[i] = colors[i].ToVector3() * 255;
             }
+
             return verts;
         }
 

@@ -10,23 +10,23 @@ namespace ColorCube
 
         private const int Quality = 100;
 
-        public override VertexPositionNormalTexture[] ColorsToVertexes(Color[] colors)
+        public override Vector3[] ColorsToPositions(Color[] colors)
         {
-            var verts = PrepareColorsVertexes(colors);
+            var verts = new Vector3[colors.Length];
+
             for (int i = 0; i < colors.Length; i++)
             {
-                // pos = HSV cylinder centered on (127.5, 127.5, 127.5)
+                // HSV cylinder centered on (127.5, 127.5, 127.5)
+
                 var hsv = ColorUtils.RgbToHsv(colors[i].ToVector3());
-                var pos = new Vector3(
+                
+                verts[i] = new Vector3(
                     MathF.Cos(hsv.X * MathF.PI * 2) * hsv.Y * HsvRadius + 127.5f,
                     hsv.Z * 255,
                     MathF.Sin(hsv.X * MathF.PI * 2) * hsv.Y * HsvRadius + 127.5f
                 );
-                for (int j = 0; j < 6; ++j)
-                {
-                    verts[i * 6 + j].Position = pos;
-                }
             }
+
             return verts;
         }
 

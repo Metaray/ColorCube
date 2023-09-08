@@ -9,17 +9,20 @@ namespace ColorCube
 {
     public class Game1 : Game
     {
-        private const int Width = 900, Height = 800;
-
-        private GraphicsDeviceManager graphics;
+        private readonly GraphicsDeviceManager graphics;
         private Effect spatialColorEffect;
-        private Matrix mWorld, mView, mProjection;
+        private Matrix mWorld;
+        private Matrix mView;
+        private Matrix mProjection;
 
-        private MouseState currentMouseState, lastMouseState;
-        private KeyboardState currentKeyboardState, lastKeyboardState;
+        private MouseState currentMouseState;
+        private MouseState lastMouseState;
+        private KeyboardState currentKeyboardState;
+        private KeyboardState lastKeyboardState;
 
-        private float vAngle = 0, hAngle = MathF.PI;
-        private int backgroundSelect = 0;
+        private float vAngle = 0;
+        private float hAngle = MathF.PI;
+        private BackgroundStyle backgroundSelect = BackgroundStyle.Black;
         private ColorsDisplayMode colorsDisplayMode = ColorsDisplayMode.RGB;
 
         private VertexPositionNormalTexture[] outlineVerts = null;
@@ -30,8 +33,8 @@ namespace ColorCube
         {
             graphics = new GraphicsDeviceManager(this)
             {
-                PreferredBackBufferWidth = Width,
-                PreferredBackBufferHeight = Height,
+                PreferredBackBufferWidth = 900,
+                PreferredBackBufferHeight = 800,
                 //GraphicsProfile = GraphicsProfile.HiDef,
                 //PreferMultiSampling = true,
                 //SynchronizeWithVerticalRetrace = false,
@@ -41,7 +44,12 @@ namespace ColorCube
             IsMouseVisible = true;
 
             IsFixedTimeStep = true;
-            TargetElapsedTime = TimeSpan.FromSeconds(1.0 / 75);
+            TargetElapsedTime = TimeSpan.FromSeconds(1.0 / 60);
+
+            Window.AllowUserResizing = true;
+            Window.ClientSizeChanged += SizeChangedHandler;
+
+            Window.FileDrop += OnFileDrop;
         }
 
         protected override void Initialize()
@@ -49,23 +57,37 @@ namespace ColorCube
             lastMouseState = currentMouseState = Mouse.GetState();
             lastKeyboardState = currentKeyboardState = Keyboard.GetState();
 
-            const float aspect = (float)Width / Height;
+            mProjection = CreateProjectionMatrix();
 
-            //mProjection = Matrix.CreatePerspectiveFieldOfView(
+            base.Initialize();
+        }
+
+        private Vector2 GetDrawBufferSize()
+        {
+            return new Vector2(graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight);
+        }
+
+        private Matrix CreateProjectionMatrix()
+        {
+            Vector2 screenSize = GetDrawBufferSize();
+            float aspect = screenSize.X / screenSize.Y;
+
+            //return Matrix.CreatePerspectiveFieldOfView(
             //    MathHelper.ToRadians(80f),
             //    ascpect,
             //    1f, 550f
             //);
 
             const float orthoSize = 400;
-            mProjection = Matrix.CreateOrthographic(
+            return Matrix.CreateOrthographic(
                 orthoSize * aspect, orthoSize,
                 0, 550
             );
+        }
 
-            Window.FileDrop += OnFileDrop;
-
-            base.Initialize();
+        private void SizeChangedHandler(object sender, EventArgs e)
+        {
+            mProjection = CreateProjectionMatrix();
         }
 
         private void OnFileDrop(object sender, FileDropEventArgs e)
@@ -117,12 +139,13 @@ namespace ColorCube
             lastKeyboardState = currentKeyboardState;
             currentKeyboardState = Keyboard.GetState();
 
-            if (!IsActive) return;
-            Trace.WriteLine($"Update {gameTime.ElapsedGameTime}");
+            if (!IsActive)
+            {
+                return;
+            }
 
             if (currentMouseState.LeftButton == ButtonState.Pressed)
             {
-                //Debug.WriteLine("{0} {1}", vAngle, hAngle);
                 const float SpeedRatio = MathF.PI / 300; // radians/pixel
                 int dx = currentMouseState.X - lastMouseState.X;
                 int dy = currentMouseState.Y - lastMouseState.Y;
@@ -138,7 +161,7 @@ namespace ColorCube
             if ((lastMouseState.RightButton == ButtonState.Released) &&
                 (currentMouseState.RightButton == ButtonState.Pressed))
             {
-                backgroundSelect = (backgroundSelect + 1) % 2;
+                backgroundSelect = backgroundSelect == BackgroundStyle.Black ? BackgroundStyle.White : BackgroundStyle.Black;
             }
 
             if (currentKeyboardState.IsKeyDown(Keys.F1) && lastKeyboardState.IsKeyUp(Keys.F1))
@@ -161,15 +184,17 @@ namespace ColorCube
 
         protected override void Draw(GameTime gameTime)
         {
-            if (!IsActive) return;
-            Trace.WriteLine($"Draw {gameTime.ElapsedGameTime}");
+            if (!IsActive)
+            {
+                return;
+            }
 
-            GraphicsDevice.Clear(backgroundSelect == 0 ? Color.Black : Color.White);
+            GraphicsDevice.Clear(backgroundSelect == BackgroundStyle.Black ? Color.Black : Color.White);
 
             // Camera looks into -Z (XY aligned with right+down, Z points to viewer, left hand rule)
             // 1) Center cube at 0,0,0
             // 2) Rotate horizontally
-            // 3) Titlt (rotate) vertically
+            // 3) Tilt (rotate) vertically
             mWorld = Matrix.CreateTranslation(-127.5f, -127.5f, -127.5f);
             mWorld *= Matrix.CreateRotationY(hAngle) * Matrix.CreateRotationX(vAngle);
 
@@ -177,7 +202,7 @@ namespace ColorCube
             mView = Matrix.CreateTranslation(0, 0, -300);
 
             spatialColorEffect.Parameters["WorldViewProjection"].SetValue(mWorld * mView * mProjection);
-            spatialColorEffect.Parameters["InvScreenSize"].SetValue(new Vector2(1.0f / Width, 1.0f / Height));
+            spatialColorEffect.Parameters["InvScreenSize"].SetValue(Vector2.One / GetDrawBufferSize());
 
             foreach (EffectPass pass in spatialColorEffect.CurrentTechnique.Passes)
             {
@@ -228,7 +253,14 @@ namespace ColorCube
 
         private enum ColorsDisplayMode
         {
-            RGB, HSV
+            RGB,
+            HSV,
+        }
+
+        private enum BackgroundStyle
+        {
+            Black,
+            White,
         }
     }
 }

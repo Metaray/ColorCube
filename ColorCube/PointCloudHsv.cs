@@ -10,24 +10,16 @@ namespace ColorCube
 
         private const int Quality = 100;
 
-        public override Vector3[] ColorsToPositions(Color[] colors)
+        public override Vector3 ColorToPosition(Color color)
         {
-            var verts = new Vector3[colors.Length];
+            // HSV cylinder centered on (127.5, 127.5, 127.5)
+            var hsv = ColorUtils.RgbToHsv(color.ToVector3());
 
-            for (int i = 0; i < colors.Length; i++)
-            {
-                // HSV cylinder centered on (127.5, 127.5, 127.5)
-
-                var hsv = ColorUtils.RgbToHsv(colors[i].ToVector3());
-                
-                verts[i] = new Vector3(
-                    MathF.Cos(hsv.X * MathF.PI * 2) * hsv.Y * HsvRadius + 127.5f,
-                    hsv.Z * 255,
-                    MathF.Sin(hsv.X * MathF.PI * 2) * hsv.Y * HsvRadius + 127.5f
-                );
-            }
-
-            return verts;
+            return new Vector3(
+                MathF.Cos(hsv.X * MathF.PI * 2) * hsv.Y * HsvRadius + 127.5f,
+                hsv.Z * 255,
+                MathF.Sin(hsv.X * MathF.PI * 2) * hsv.Y * HsvRadius + 127.5f
+            );
         }
 
         public override VertexPositionColor[] MakeOutline()

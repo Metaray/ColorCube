@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ColorCube
@@ -26,9 +27,12 @@ namespace ColorCube
         private BackgroundStyle backgroundSelect = BackgroundStyle.Black;
         private ColorsDisplayMode colorsDisplayMode = ColorsDisplayMode.RGB;
 
-        private VertexPositionNormalTexture[] outlineVerts = null;
-        private Color[] imageColors = null;
-        private VertexBuffer particlesVbuf = null;
+        private VertexPositionColor[] outlineVerts;
+        private Color[] imageColors;
+        private readonly ColorQuad baseQuad = new(2.0f);
+        private VertexBuffer quadVertexBuffer;
+        private IndexBuffer quadIndexBuffer;
+        private VertexBuffer colorInstanceBuffer;
 
         public Game1()
         {
@@ -58,7 +62,14 @@ namespace ColorCube
             lastMouseState = currentMouseState = Mouse.GetState();
             lastKeyboardState = currentKeyboardState = Keyboard.GetState();
 
+            quadVertexBuffer = new VertexBuffer(GraphicsDevice, baseQuad.VertexDeclaration, baseQuad.VertexData.Length, BufferUsage.WriteOnly);
+            quadVertexBuffer.SetData(baseQuad.VertexData);
+            quadIndexBuffer = new IndexBuffer(GraphicsDevice, baseQuad.IndexData[0].GetType(), baseQuad.IndexData.Length, BufferUsage.WriteOnly);
+            quadIndexBuffer.SetData(baseQuad.IndexData);
+
             mProjection = CreateProjectionMatrix();
+
+            CalculateVertexData();
 
             base.Initialize();
         }
@@ -75,7 +86,7 @@ namespace ColorCube
 
             //return Matrix.CreatePerspectiveFieldOfView(
             //    MathHelper.ToRadians(80f),
-            //    ascpect,
+            //    aspect,
             //    1f, 550f
             //);
 
@@ -130,8 +141,6 @@ namespace ColorCube
             {
                 ScheduleLoadImage(args[1]);
             }
-
-            CalculateVertexData();
         }
 
         protected override void Update(GameTime gameTime)
@@ -235,19 +244,31 @@ namespace ColorCube
             spatialColorEffect.Parameters["WorldViewProjection"].SetValue(mWorld * mView * mProjection);
             spatialColorEffect.Parameters["InvScreenSize"].SetValue(Vector2.One / GetDrawBufferSize());
 
-            foreach (EffectPass pass in spatialColorEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
+            EffectTechnique coloredVertexesTech = spatialColorEffect.Techniques.First(t => t.Name == "ColoredVertexes");
+            EffectTechnique colorParticlesTech = spatialColorEffect.Techniques.First(t => t.Name == "ColorParticles");
 
-                if (outlineVerts != null)
+            if (outlineVerts != null)
+            {
+                foreach (EffectPass pass in coloredVertexesTech.Passes)
                 {
+                    pass.Apply();
+
                     GraphicsDevice.DrawUserPrimitives(PrimitiveType.LineList, outlineVerts, 0, outlineVerts.Length / 2);
                 }
+            }
 
-                if (particlesVbuf != null)
+            if (colorInstanceBuffer != null)
+            {
+                foreach (EffectPass pass in colorParticlesTech.Passes)
                 {
-                    GraphicsDevice.SetVertexBuffer(particlesVbuf);
-                    GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, particlesVbuf.VertexCount / 3);
+                    pass.Apply();
+
+                    GraphicsDevice.SetVertexBuffers(
+                        new VertexBufferBinding(quadVertexBuffer, 0, 0),
+                        new VertexBufferBinding(colorInstanceBuffer, 0, 1)
+                    );
+                    GraphicsDevice.Indices = quadIndexBuffer;
+                    GraphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, 0, 0, quadIndexBuffer.IndexCount / 3, colorInstanceBuffer.VertexCount);
                 }
             }
 
@@ -274,19 +295,24 @@ namespace ColorCube
 
             if (imageColors != null)
             {
-                var particlesVerts = colorsDisplayMode switch
+                VertexPositionColor[] particlesVerts = colorsDisplayMode switch
                 {
                     ColorsDisplayMode.RGB => new PointCloudRgb().ColorsToVertexData(imageColors),
                     ColorsDisplayMode.HSV => new PointCloudHsv().ColorsToVertexData(imageColors),
                     _ => throw new NotImplementedException()
                 };
 
-                if (particlesVbuf == null || particlesVbuf.VertexCount != particlesVerts.Length)
+                if (colorInstanceBuffer == null || colorInstanceBuffer.VertexCount != particlesVerts.Length)
                 {
-                    particlesVbuf = new VertexBuffer(GraphicsDevice, VertexPositionNormalTexture.VertexDeclaration, particlesVerts.Length, BufferUsage.WriteOnly);
+                    colorInstanceBuffer = new VertexBuffer(
+                        GraphicsDevice,
+                        VertexPositionColor.VertexDeclaration,
+                        particlesVerts.Length,
+                        BufferUsage.WriteOnly
+                    );
                 }
 
-                particlesVbuf.SetData(particlesVerts);
+                colorInstanceBuffer.SetData(particlesVerts);
             }
         }
 

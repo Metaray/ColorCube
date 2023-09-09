@@ -30,14 +30,9 @@ namespace ColorCube
             return verts;
         }
 
-        public override VertexPositionNormalTexture[] MakeOutline()
+        public override VertexPositionColor[] MakeOutline()
         {
-            var outline = new VertexPositionNormalTexture[Quality * 2 * 2];
-
-            for (var i = 0; i < outline.Length; ++i)
-            {
-                outline[i].TextureCoordinate = new Vector2(0);
-            }
+            var outline = new VertexPositionColor[Quality * 2 * 2];
 
             for (var idx = 0; idx < Quality; ++idx)
             {
@@ -47,9 +42,9 @@ namespace ColorCube
                 var i4 = i2 + Quality * 2;
 
                 var h = (float)(idx + 0.5f) / Quality;
-                var color = ColorUtils.HsvToRgb(new Vector3(h, 1, 1));
+                var color = new Color(ColorUtils.HsvToRgb(new Vector3(h, 1, 1)));
 
-                outline[i1].Normal = outline[i2].Normal = outline[i3].Normal = outline[i4].Normal = color;
+                outline[i1].Color = outline[i2].Color = outline[i3].Color = outline[i4].Color = color;
                 var x = MathF.Cos(h * MathF.PI * 2) * HsvRadius + 127.5f;
                 var y = MathF.Sin(h * MathF.PI * 2) * HsvRadius + 127.5f;
                 outline[i1].Position = outline[i2].Position = new Vector3(x, -1, y);

@@ -18,23 +18,27 @@ namespace ColorCube
             return verts;
         }
 
-        public override VertexPositionNormalTexture[] MakeOutline()
+        public override VertexPositionColor[] MakeOutline()
         {
-            var outline = new VertexPositionNormalTexture[24];
-            outline[0].Position = outline[0].Normal = new Vector3(-1f, -1f, -1f);
-            outline[1].Position = outline[1].Normal = new Vector3(-1f, -1f, 256f);
-            outline[2].Position = outline[2].Normal = new Vector3(256f, -1f, -1f);
-            outline[3].Position = outline[3].Normal = new Vector3(256f, -1f, 256f);
-            outline[4].Position = outline[4].Normal = new Vector3(-1f, 256f, -1f);
-            outline[5].Position = outline[5].Normal = new Vector3(-1f, 256f, 256f);
-            outline[6].Position = outline[6].Normal = new Vector3(256f, 256f, -1f);
-            outline[7].Position = outline[7].Normal = new Vector3(256f, 256f, 256f);
+            var outline = new VertexPositionColor[24];
 
-            for (int i = 0; i < 8; ++i)
-            {
-                outline[i].TextureCoordinate = new Vector2(0);
-                outline[i].Normal /= 255;
-            }
+            outline[0].Position = new Vector3(-1f, -1f, -1f);
+            outline[1].Position = new Vector3(-1f, -1f, 256f);
+            outline[2].Position = new Vector3(256f, -1f, -1f);
+            outline[3].Position = new Vector3(256f, -1f, 256f);
+            outline[4].Position = new Vector3(-1f, 256f, -1f);
+            outline[5].Position = new Vector3(-1f, 256f, 256f);
+            outline[6].Position = new Vector3(256f, 256f, -1f);
+            outline[7].Position = new Vector3(256f, 256f, 256f);
+
+            outline[0].Color = new Color(0, 0, 0);
+            outline[1].Color = new Color(0, 0, 255);
+            outline[2].Color = new Color(255, 0, 0);
+            outline[3].Color = new Color(255, 0, 255);
+            outline[4].Color = new Color(0, 255, 0);
+            outline[5].Color = new Color(0, 255, 255);
+            outline[6].Color = new Color(255, 255, 0);
+            outline[7].Color = new Color(255, 255, 255);
 
             outline[8] = outline[0];
             outline[9] = outline[2];

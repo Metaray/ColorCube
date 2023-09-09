@@ -19,6 +19,7 @@ namespace ColorCube
         private MouseState lastMouseState;
         private KeyboardState currentKeyboardState;
         private KeyboardState lastKeyboardState;
+        private bool isMovingView;
 
         private float vAngle = 0;
         private float hAngle = MathF.PI;
@@ -108,7 +109,7 @@ namespace ColorCube
                     imageColors = ColorUtils.ImageUniqueColors(path);
 
                     Trace.WriteLine($"Image has {imageColors.Length} colors");
-                    UpdateDisplayMode(colorsDisplayMode);
+                    CalculateVertexData();
                 }
                 catch (Exception ex)
                 {
@@ -123,13 +124,14 @@ namespace ColorCube
 
             spatialColorEffect = Content.Load<Effect>("mainshader");
 
-            var args = Environment.GetCommandLineArgs();
+            string[] args = Environment.GetCommandLineArgs();
+
             if (args.Length >= 2)
             {
                 ScheduleLoadImage(args[1]);
             }
 
-            UpdateDisplayMode(colorsDisplayMode);
+            CalculateVertexData();
         }
 
         protected override void Update(GameTime gameTime)
@@ -144,39 +146,61 @@ namespace ColorCube
                 return;
             }
 
-            if (currentMouseState.LeftButton == ButtonState.Pressed)
+            const int DeadzoneSize = 5;
+            var interactiveRectangle = new Rectangle(
+                DeadzoneSize,
+                DeadzoneSize,
+                Window.ClientBounds.Width - DeadzoneSize * 2,
+                Window.ClientBounds.Height - DeadzoneSize * 2
+            );
+
+            if (currentMouseState.LeftButton == ButtonState.Released)
+            {
+                isMovingView = false;
+            }
+            else if (lastMouseState.LeftButton == ButtonState.Released
+                && interactiveRectangle.Contains(currentMouseState.Position)
+                && interactiveRectangle.Contains(lastMouseState.Position))
+            {
+                isMovingView = true;
+            }
+
+            if (isMovingView)
             {
                 const float SpeedRatio = MathF.PI / 300; // radians/pixel
+
                 int dx = currentMouseState.X - lastMouseState.X;
                 int dy = currentMouseState.Y - lastMouseState.Y;
+
                 hAngle += MathF.Abs(vAngle) <= MathF.PI * 0.5f || MathF.Abs(vAngle) >= MathF.PI * 1.5f
                     ? dx * SpeedRatio 
                     : dx * -SpeedRatio;
                 hAngle %= MathF.PI * 2;
+
                 vAngle += dy * SpeedRatio;
                 //vAngle %= MathF.PI * 2;
                 vAngle = Math.Min(Math.Max(vAngle, -MathF.PI / 2), MathF.PI / 2);
             }
 
-            if ((lastMouseState.RightButton == ButtonState.Released) &&
-                (currentMouseState.RightButton == ButtonState.Pressed))
+            if (lastMouseState.RightButton == ButtonState.Released
+                && currentMouseState.RightButton == ButtonState.Pressed
+                && interactiveRectangle.Contains(currentMouseState.Position))
             {
-                backgroundSelect = backgroundSelect == BackgroundStyle.Black ? BackgroundStyle.White : BackgroundStyle.Black;
+                backgroundSelect = backgroundSelect switch
+                {
+                    BackgroundStyle.Black => BackgroundStyle.White,
+                    BackgroundStyle.White => BackgroundStyle.Black,
+                    _ => throw new NotImplementedException(),
+                };
             }
 
             if (currentKeyboardState.IsKeyDown(Keys.F1) && lastKeyboardState.IsKeyUp(Keys.F1))
             {
-                if (colorsDisplayMode != ColorsDisplayMode.RGB)
-                {
-                    UpdateDisplayMode(ColorsDisplayMode.RGB);
-                }
+                SetColorDisplayMode(ColorsDisplayMode.RGB);
             }
             else if (currentKeyboardState.IsKeyDown(Keys.F2) && lastKeyboardState.IsKeyUp(Keys.F2))
             {
-                if (colorsDisplayMode != ColorsDisplayMode.HSV)
-                {
-                    UpdateDisplayMode(ColorsDisplayMode.HSV);
-                }
+                SetColorDisplayMode(ColorsDisplayMode.HSV);
             }
 
             base.Update(gameTime);
@@ -189,7 +213,14 @@ namespace ColorCube
                 return;
             }
 
-            GraphicsDevice.Clear(backgroundSelect == BackgroundStyle.Black ? Color.Black : Color.White);
+            GraphicsDevice.Clear(
+                backgroundSelect switch
+                {
+                    BackgroundStyle.Black => Color.Black,
+                    BackgroundStyle.White => Color.White,
+                    _ => throw new NotImplementedException(),
+                }
+            );
 
             // Camera looks into -Z (XY aligned with right+down, Z points to viewer, left hand rule)
             // 1) Center cube at 0,0,0
@@ -223,11 +254,18 @@ namespace ColorCube
             base.Draw(gameTime);
         }
 
-        private void UpdateDisplayMode(ColorsDisplayMode newMode)
+        private void SetColorDisplayMode(ColorsDisplayMode newMode)
         {
-            colorsDisplayMode = newMode;
+            if (newMode != colorsDisplayMode)
+            {
+                colorsDisplayMode = newMode;
+                CalculateVertexData();
+            }
+        }
 
-            outlineVerts = newMode switch
+        private void CalculateVertexData()
+        {
+            outlineVerts = colorsDisplayMode switch
             {
                 ColorsDisplayMode.RGB => new PointCloudRgb().MakeOutline(),
                 ColorsDisplayMode.HSV => new PointCloudHsv().MakeOutline(),
@@ -236,7 +274,7 @@ namespace ColorCube
 
             if (imageColors != null)
             {
-                var particlesVerts = newMode switch
+                var particlesVerts = colorsDisplayMode switch
                 {
                     ColorsDisplayMode.RGB => new PointCloudRgb().ColorsToVertexData(imageColors),
                     ColorsDisplayMode.HSV => new PointCloudHsv().ColorsToVertexData(imageColors),
@@ -247,6 +285,7 @@ namespace ColorCube
                 {
                     particlesVbuf = new VertexBuffer(GraphicsDevice, VertexPositionNormalTexture.VertexDeclaration, particlesVerts.Length, BufferUsage.WriteOnly);
                 }
+
                 particlesVbuf.SetData(particlesVerts);
             }
         }

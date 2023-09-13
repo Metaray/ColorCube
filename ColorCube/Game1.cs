@@ -26,10 +26,11 @@ namespace ColorCube
         private float hAngle = MathF.PI;
         private BackgroundStyle backgroundSelect = BackgroundStyle.Black;
         private ColorsDisplayMode colorsDisplayMode = ColorsDisplayMode.RGB;
+        private ProjectionType projectionType = ProjectionType.Orthographic;
 
         private VertexPositionColor[] outlineVerts;
         private Color[] imageColors;
-        private readonly ColorQuad baseQuad = new(2.0f);
+        private readonly ColorQuad baseQuad = new(0.5f);
         private VertexBuffer quadVertexBuffer;
         private IndexBuffer quadIndexBuffer;
         private VertexBuffer colorInstanceBuffer;
@@ -67,7 +68,7 @@ namespace ColorCube
             quadIndexBuffer = new IndexBuffer(GraphicsDevice, baseQuad.IndexData[0].GetType(), baseQuad.IndexData.Length, BufferUsage.WriteOnly);
             quadIndexBuffer.SetData(baseQuad.IndexData);
 
-            mProjection = CreateProjectionMatrix();
+            UpdateViewMatrixes();
 
             CalculateVertexData();
 
@@ -79,27 +80,45 @@ namespace ColorCube
             return new Vector2(graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight);
         }
 
-        private Matrix CreateProjectionMatrix()
+        private void UpdateViewMatrixes()
         {
             Vector2 screenSize = GetDrawBufferSize();
             float aspect = screenSize.X / screenSize.Y;
 
-            //return Matrix.CreatePerspectiveFieldOfView(
-            //    MathHelper.ToRadians(80f),
-            //    aspect,
-            //    1f, 550f
-            //);
+            switch (projectionType)
+            {
+                case ProjectionType.Orthographic:
+                {
+                    const float OrthoSize = 400;
 
-            const float orthoSize = 400;
-            return Matrix.CreateOrthographic(
-                orthoSize * aspect, orthoSize,
-                0, 550
-            );
+                    mView = Matrix.Identity;
+                    mProjection = Matrix.CreateOrthographic(
+                        OrthoSize * aspect, OrthoSize,
+                        -300, 300
+                    );
+                    break;
+                }
+                case ProjectionType.Perspective:
+                {
+                    float fov = MathHelper.ToRadians(30);
+                    const float CloseSlice = 300;
+
+                    float distance = 255.0f / 2 + (CloseSlice / 2) / MathF.Tan(fov / 2);
+                    mView = Matrix.CreateTranslation(0, 0, -distance);
+                    mProjection = Matrix.CreatePerspectiveFieldOfView(
+                        fov,
+                        aspect,
+                        distance * 0.5f,
+                        distance * 2.0f
+                    );
+                    break;
+                }
+            }
         }
 
         private void SizeChangedHandler(object sender, EventArgs e)
         {
-            mProjection = CreateProjectionMatrix();
+            UpdateViewMatrixes();
         }
 
         private void OnFileDrop(object sender, FileDropEventArgs e)
@@ -235,13 +254,11 @@ namespace ColorCube
             // 1) Center cube at 0,0,0
             // 2) Rotate horizontally
             // 3) Tilt (rotate) vertically
-            mWorld = Matrix.CreateTranslation(-127.5f, -127.5f, -127.5f);
-            mWorld *= Matrix.CreateRotationY(hAngle) * Matrix.CreateRotationX(vAngle);
-
-            // 3) Place camera behind object
-            mView = Matrix.CreateTranslation(0, 0, -300);
+            mWorld = Matrix.CreateTranslation(-127.5f, -127.5f, -127.5f) * Matrix.CreateRotationY(hAngle) * Matrix.CreateRotationX(vAngle);
 
             spatialColorEffect.Parameters["WorldViewProjection"].SetValue(mWorld * mView * mProjection);
+            spatialColorEffect.Parameters["WorldView"].SetValue(mWorld * mView);
+            spatialColorEffect.Parameters["Projection"].SetValue(mProjection);
             spatialColorEffect.Parameters["InvScreenSize"].SetValue(Vector2.One / GetDrawBufferSize());
 
             EffectTechnique coloredVertexesTech = spatialColorEffect.Techniques.First(t => t.Name == "ColoredVertexes");
@@ -326,6 +343,12 @@ namespace ColorCube
         {
             Black,
             White,
+        }
+
+        private enum ProjectionType
+        {
+            Orthographic,
+            Perspective,
         }
     }
 }

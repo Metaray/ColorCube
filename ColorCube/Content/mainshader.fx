@@ -10,6 +10,8 @@
 
 
 float4x4 WorldViewProjection;
+float4x4 WorldView;
+float4x4 Projection;
 float2 InvScreenSize;
 
 
@@ -30,22 +32,22 @@ struct ColorParticlesQuadBaseVsInput
     float3 Position : POSITION0;
 };
 
-struct ColoredVertexesVsOutput
+struct ColoredVertexesPsInput
 {
     float4 Position : SV_Position;
     float3 Color : COLOR;
 };
 
 
-ColoredVertexesVsOutput ColoredVertexesVs(ColoredVertexesVsInput input)
+ColoredVertexesPsInput ColoredVertexesVs(ColoredVertexesVsInput input)
 {
-    ColoredVertexesVsOutput output;
+    ColoredVertexesPsInput output;
     output.Position = mul(input.Position, WorldViewProjection);
     output.Color = input.Color.rgb;
     return output;
 }
 
-float4 ColoredVertexesPs(ColoredVertexesVsOutput input) : SV_Target
+float4 ColoredVertexesPs(ColoredVertexesPsInput input) : SV_Target
 {
     return float4(input.Color, 1);
 }
@@ -60,18 +62,24 @@ technique ColoredVertexes
 }
 
 
-ColoredVertexesVsOutput ColorParticlesVs(ColorParticlesQuadBaseVsInput quad, ColorParticlesInstanceVsInput instance)
+ColoredVertexesPsInput ColorParticlesVs(ColorParticlesQuadBaseVsInput quad, ColorParticlesInstanceVsInput instance)
 {
-    float4 projPosition = mul(instance.Position, WorldViewProjection);
-    projPosition.xy += quad.Position.xy * projPosition.w * InvScreenSize;
+    float4 projPosition;
+    
+    //projPosition = mul(instance.Position, WorldViewProjection);
+    //projPosition.xy += quad.Position.xy * projPosition.w * InvScreenSize;
+    
+    float4 viewPosition = mul(instance.Position, WorldView);
+    viewPosition.xy += quad.Position.xy;
+    projPosition = mul(viewPosition, Projection);
 
-    ColoredVertexesVsOutput output;
+    ColoredVertexesPsInput output;
     output.Position = projPosition;
     output.Color = instance.Color.rgb;
     return output;
 }
 
-float4 ColorParticlesPs(ColoredVertexesVsOutput input) : SV_Target
+float4 ColorParticlesPs(ColoredVertexesPsInput input) : SV_Target
 {
     return float4(input.Color, 1);
 }

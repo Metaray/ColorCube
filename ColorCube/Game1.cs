@@ -222,16 +222,32 @@ namespace ColorCube
                 };
             }
 
-            if (currentKeyboardState.IsKeyDown(Keys.F1) && lastKeyboardState.IsKeyUp(Keys.F1))
+            if (KeyPressed(Keys.F1))
             {
                 SetColorDisplayMode(ColorsDisplayMode.RGB);
             }
-            else if (currentKeyboardState.IsKeyDown(Keys.F2) && lastKeyboardState.IsKeyUp(Keys.F2))
+            else if (KeyPressed(Keys.F2))
             {
                 SetColorDisplayMode(ColorsDisplayMode.HSV);
             }
 
+            if (KeyPressed(Keys.D1))
+            {
+                projectionType = ProjectionType.Orthographic;
+                UpdateViewMatrixes();
+            }
+            else if (KeyPressed(Keys.D2))
+            {
+                projectionType = ProjectionType.Perspective;
+                UpdateViewMatrixes();
+            }
+
             base.Update(gameTime);
+
+            bool KeyPressed(Keys key)
+            {
+                return currentKeyboardState.IsKeyDown(key) && lastKeyboardState.IsKeyUp(key);
+            }
         }
 
         protected override void Draw(GameTime gameTime)

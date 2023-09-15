@@ -110,5 +110,43 @@ namespace ColorCube
                 _ => new Vector3(v, p, q),
             };
         }
+
+        public static float RgbToLinear(float value)
+        {
+            if (value <= 0.04045f)
+            {
+                return value / 12.92f;
+            }
+            else
+            {
+                return MathF.Pow((value + 0.055f) / 1.055f, 2.4f);
+            }
+        }
+
+        public static Vector3 RgbToLinear(Vector3 color)
+        {
+            return new Vector3(RgbToLinear(color.X), RgbToLinear(color.Y), RgbToLinear(color.Z));
+        }
+
+        public static Vector3 SrgbToXyz(Vector3 srgb)
+        {
+            return new Vector3(
+                srgb.X * 0.664511f + srgb.Y * 0.154324f + srgb.Z * 0.162028f,
+                srgb.X * 0.283881f + srgb.Y * 0.668433f + srgb.Z * 0.047685f,
+                srgb.X * 0.000088f + srgb.Y * 0.072310f + srgb.Z * 0.986039f
+            );
+        }
+
+        public static Vector2 XyzToChromaXy(Vector3 xyz)
+        {
+            float sum = xyz.X + xyz.Y + xyz.Z;
+            
+            if (sum < 1.0e-6f)
+            {
+                return new Vector2(0.32272672086556803f, 0.32902290955907926f);
+            }
+            
+            return new Vector2(xyz.X, xyz.Y) / sum;
+        }
     }
 }

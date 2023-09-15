@@ -230,6 +230,10 @@ namespace ColorCube
             {
                 SetColorDisplayMode(ColorsDisplayMode.HSV);
             }
+            else if (KeyPressed(Keys.F3))
+            {
+                SetColorDisplayMode(ColorsDisplayMode.XYY);
+            }
 
             if (KeyPressed(Keys.D1))
             {
@@ -319,21 +323,19 @@ namespace ColorCube
 
         private void CalculateVertexData()
         {
-            outlineVerts = colorsDisplayMode switch
+            PointCloud pointCloud = colorsDisplayMode switch
             {
-                ColorsDisplayMode.RGB => new PointCloudRgb().MakeOutline(),
-                ColorsDisplayMode.HSV => new PointCloudHsv().MakeOutline(),
+                ColorsDisplayMode.RGB => new PointCloudRgb(),
+                ColorsDisplayMode.HSV => new PointCloudHsv(),
+                ColorsDisplayMode.XYY => new PointCloudXyy(),
                 _ => throw new NotImplementedException()
             };
 
+            outlineVerts = pointCloud.MakeOutline();
+
             if (imageColors != null)
             {
-                VertexPositionColor[] particlesVerts = colorsDisplayMode switch
-                {
-                    ColorsDisplayMode.RGB => new PointCloudRgb().ColorsToVertexData(imageColors),
-                    ColorsDisplayMode.HSV => new PointCloudHsv().ColorsToVertexData(imageColors),
-                    _ => throw new NotImplementedException()
-                };
+                VertexPositionColor[] particlesVerts = pointCloud.ColorsToVertexData(imageColors);
 
                 if (colorInstanceBuffer == null || colorInstanceBuffer.VertexCount != particlesVerts.Length)
                 {
@@ -353,6 +355,7 @@ namespace ColorCube
         {
             RGB,
             HSV,
+            XYY,
         }
 
         private enum BackgroundStyle

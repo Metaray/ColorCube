@@ -3,7 +3,6 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ColorCube
@@ -12,6 +11,7 @@ namespace ColorCube
     {
         private readonly GraphicsDeviceManager graphics;
         private Effect spatialColorEffect;
+        private Effect particlesEffect;
         private Matrix mWorld;
         private Matrix mView;
         private Matrix mProjection;
@@ -152,7 +152,8 @@ namespace ColorCube
         {
             base.LoadContent();
 
-            spatialColorEffect = Content.Load<Effect>("mainshader");
+            spatialColorEffect = Content.Load<Effect>("spatialColor");
+            particlesEffect = Content.Load<Effect>("particles");
 
             string[] args = Environment.GetCommandLineArgs();
 
@@ -277,16 +278,15 @@ namespace ColorCube
             mWorld = Matrix.CreateTranslation(-127.5f, -127.5f, -127.5f) * Matrix.CreateRotationY(hAngle) * Matrix.CreateRotationX(vAngle);
 
             spatialColorEffect.Parameters["WorldViewProjection"].SetValue(mWorld * mView * mProjection);
-            spatialColorEffect.Parameters["WorldView"].SetValue(mWorld * mView);
-            spatialColorEffect.Parameters["Projection"].SetValue(mProjection);
-            spatialColorEffect.Parameters["InvScreenSize"].SetValue(Vector2.One / GetDrawBufferSize());
 
-            EffectTechnique coloredVertexesTech = spatialColorEffect.Techniques.First(t => t.Name == "ColoredVertexes");
-            EffectTechnique colorParticlesTech = spatialColorEffect.Techniques.First(t => t.Name == "ColorParticles");
+            //particlesEffect.Parameters["WorldViewProjection"].SetValue(mWorld * mView * mProjection);
+            particlesEffect.Parameters["WorldView"].SetValue(mWorld * mView);
+            particlesEffect.Parameters["Projection"].SetValue(mProjection);
+            //particlesEffect.Parameters["InvScreenSize"].SetValue(Vector2.One / GetDrawBufferSize());
 
             if (outlineVerts != null)
             {
-                foreach (EffectPass pass in coloredVertexesTech.Passes)
+                foreach (EffectPass pass in spatialColorEffect.CurrentTechnique.Passes)
                 {
                     pass.Apply();
 
@@ -296,15 +296,16 @@ namespace ColorCube
 
             if (colorInstanceBuffer != null)
             {
-                foreach (EffectPass pass in colorParticlesTech.Passes)
+                GraphicsDevice.SetVertexBuffers(
+                    new VertexBufferBinding(quadVertexBuffer, 0, 0),
+                    new VertexBufferBinding(colorInstanceBuffer, 0, 1)
+                );
+                GraphicsDevice.Indices = quadIndexBuffer;
+
+                foreach (EffectPass pass in particlesEffect.CurrentTechnique.Passes)
                 {
                     pass.Apply();
-
-                    GraphicsDevice.SetVertexBuffers(
-                        new VertexBufferBinding(quadVertexBuffer, 0, 0),
-                        new VertexBufferBinding(colorInstanceBuffer, 0, 1)
-                    );
-                    GraphicsDevice.Indices = quadIndexBuffer;
+                    
                     GraphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, 0, 0, quadIndexBuffer.IndexCount / 3, colorInstanceBuffer.VertexCount);
                 }
             }

@@ -9,17 +9,11 @@
 #endif
 
 
-float4x4 WorldViewProjection;
+//float4x4 WorldViewProjection;
 float4x4 WorldView;
 float4x4 Projection;
-float2 InvScreenSize;
+//float2 InvScreenSize;
 
-
-struct ColoredVertexesVsInput
-{
-    float4 Position : POSITION0;
-    float4 Color : COLOR0;
-};
 
 struct ColorParticlesInstanceVsInput
 {
@@ -37,30 +31,6 @@ struct ColoredVertexesPsInput
     float4 Position : SV_Position;
     float3 Color : COLOR;
 };
-
-
-ColoredVertexesPsInput ColoredVertexesVs(ColoredVertexesVsInput input)
-{
-    ColoredVertexesPsInput output;
-    output.Position = mul(input.Position, WorldViewProjection);
-    output.Color = input.Color.rgb;
-    return output;
-}
-
-float4 ColoredVertexesPs(ColoredVertexesPsInput input) : SV_Target
-{
-    return float4(input.Color, 1);
-}
-
-technique ColoredVertexes
-{
-    pass Pass1
-    {
-        VertexShader = compile VS_SHADERMODEL ColoredVertexesVs();
-        PixelShader = compile PS_SHADERMODEL ColoredVertexesPs();
-    }
-}
-
 
 ColoredVertexesPsInput ColorParticlesVs(ColorParticlesQuadBaseVsInput quad, ColorParticlesInstanceVsInput instance)
 {

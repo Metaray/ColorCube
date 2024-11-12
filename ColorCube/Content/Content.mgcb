@@ -13,10 +13,16 @@
 
 #---------------------------------- Content ---------------------------------#
 
-#begin mainshader.fx
+#begin spatialColor.fx
 /importer:EffectImporter
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
 /processorParam:Defines=
-/build:mainshader.fx
+/build:spatialColor.fx
 
+#begin particles.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/processorParam:Defines=
+/build:particles.fx

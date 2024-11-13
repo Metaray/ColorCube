@@ -10,10 +10,13 @@ Launch from command line by specifying a file to visualize:
 
 ## Controls
 
-- **Hold LMB & drag** - move view angle
-- **Right click** - switch background color
-- **F1** - display as RGB cube
-- **F2** - display as HSV cylinder
+- **Drag with left mouse button** - Move view angle
+- **Right click** - Switch background color
+- **F1** - Display as RGB cube
+- **F2** - Display as HSV cylinder
+- **F3** - Display as CIE xyY
+- **1** - Use orthographic projection
+- **2** - Use perspective projection
 
 ## Screenshots
 

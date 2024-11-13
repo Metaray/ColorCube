@@ -65,7 +65,8 @@ namespace ColorCube
 
             quadVertexBuffer = new VertexBuffer(GraphicsDevice, baseQuad.VertexDeclaration, baseQuad.VertexData.Length, BufferUsage.WriteOnly);
             quadVertexBuffer.SetData(baseQuad.VertexData);
-            quadIndexBuffer = new IndexBuffer(GraphicsDevice, baseQuad.IndexData[0].GetType(), baseQuad.IndexData.Length, BufferUsage.WriteOnly);
+
+            quadIndexBuffer = new IndexBuffer(GraphicsDevice, baseQuad.IndexType, baseQuad.IndexData.Length, BufferUsage.WriteOnly);
             quadIndexBuffer.SetData(baseQuad.IndexData);
 
             UpdateViewMatrixes();
@@ -342,7 +343,7 @@ namespace ColorCube
                 {
                     colorInstanceBuffer = new VertexBuffer(
                         GraphicsDevice,
-                        VertexPositionColor.VertexDeclaration,
+                        PointCloud.ParticleInstanceDeclaration,
                         particlesVerts.Length,
                         BufferUsage.WriteOnly
                     );

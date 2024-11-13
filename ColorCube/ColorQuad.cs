@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 
 namespace ColorCube
 {
@@ -21,6 +22,8 @@ namespace ColorCube
         }
 
         public VertexDeclaration VertexDeclaration => VertexPosition.VertexDeclaration;
+
+        public Type IndexType => typeof(short);
 
         public VertexPosition[] VertexData { get; }
 

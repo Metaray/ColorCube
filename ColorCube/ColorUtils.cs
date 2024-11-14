@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using SixLabors.ImageSharp.PixelFormats;
 using System;
 
 namespace ColorCube
@@ -10,25 +11,18 @@ namespace ColorCube
             var hasColor = new bool[256 * 256 * 256];
             int uniqueCount = 0;
 
-            using (var bitmap = new System.Drawing.Bitmap(path))
+            using (var bitmap = SixLabors.ImageSharp.Image.Load<Bgr24>(path))
             {
-                var data = bitmap.LockBits(
-                    new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height),
-                    System.Drawing.Imaging.ImageLockMode.ReadOnly,
-                    System.Drawing.Imaging.PixelFormat.Format24bppRgb
-                );
-
-                unsafe
+                bitmap.ProcessPixelRows(accessor =>
                 {
-                    var scan = (byte*)data.Scan0;
-
-                    for (int y = 0; y < bitmap.Height; y++)
+                    for (int y = 0; y < accessor.Height; y++)
                     {
-                        for (int x = 0; x < bitmap.Width; x++)
+                        Span<Bgr24> pixelRow = accessor.GetRowSpan(y);
+
+                        foreach (ref Bgr24 pixel in pixelRow)
                         {
-                            var idx = x * 3 + data.Stride * y;
-                            var clr = (scan[idx + 2] << 16) | (scan[idx + 1] << 8) | scan[idx + 0];
-                            
+                            int clr = (pixel.R << 16) | (pixel.G << 8) | pixel.B;
+
                             if (!hasColor[clr])
                             {
                                 uniqueCount++;
@@ -36,12 +30,11 @@ namespace ColorCube
                             }
                         }
                     }
-                }
-
-                bitmap.UnlockBits(data);
+                });
             }
 
             var uniqColors = new Color[uniqueCount];
+
             for (int i = 0, j = 0; i < hasColor.Length; ++i)
             {
                 if (hasColor[i])
@@ -52,6 +45,7 @@ namespace ColorCube
                     j++;
                 }
             }
+
             return uniqColors;
         }
 

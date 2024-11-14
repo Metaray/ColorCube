@@ -78,7 +78,7 @@ namespace ColorCube
 
         private Vector2 GetDrawBufferSize()
         {
-            return new Vector2(graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight);
+            return new Vector2(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
         }
 
         private void UpdateViewMatrixes()

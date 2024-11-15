@@ -34,6 +34,7 @@ namespace ColorCube
         private VertexBuffer quadVertexBuffer;
         private IndexBuffer quadIndexBuffer;
         private VertexBuffer colorInstanceBuffer;
+        private int forceDrawFrames;
 
         public Game1()
         {
@@ -115,6 +116,8 @@ namespace ColorCube
                     break;
                 }
             }
+
+            ScheduleRedraw();
         }
 
         private void SizeChangedHandler(object sender, EventArgs e)
@@ -210,18 +213,20 @@ namespace ColorCube
                 vAngle += dy * SpeedRatio;
                 //vAngle %= MathF.PI * 2;
                 vAngle = Math.Min(Math.Max(vAngle, -MathF.PI / 2), MathF.PI / 2);
+
+                ScheduleRedraw();
             }
 
             if (lastMouseState.RightButton == ButtonState.Released
                 && currentMouseState.RightButton == ButtonState.Pressed
                 && interactiveRectangle.Contains(currentMouseState.Position))
             {
-                backgroundSelect = backgroundSelect switch
+                SetBackgroundStyle(backgroundSelect switch
                 {
                     BackgroundStyle.Black => BackgroundStyle.White,
                     BackgroundStyle.White => BackgroundStyle.Black,
                     _ => throw new NotImplementedException(),
-                };
+                });
             }
 
             if (KeyPressed(Keys.F1))
@@ -239,13 +244,11 @@ namespace ColorCube
 
             if (KeyPressed(Keys.D1))
             {
-                projectionType = ProjectionType.Orthographic;
-                UpdateViewMatrixes();
+                SetProjectionType(ProjectionType.Orthographic);
             }
             else if (KeyPressed(Keys.D2))
             {
-                projectionType = ProjectionType.Perspective;
-                UpdateViewMatrixes();
+                SetProjectionType(ProjectionType.Perspective);
             }
 
             base.Update(gameTime);
@@ -258,10 +261,13 @@ namespace ColorCube
 
         protected override void Draw(GameTime gameTime)
         {
-            if (!IsActive)
+            if (forceDrawFrames <= 0)
             {
                 return;
             }
+
+            forceDrawFrames--;
+            //Trace.WriteLine($"GT: {gameTime.ElapsedGameTime}");
 
             GraphicsDevice.Clear(
                 backgroundSelect switch
@@ -314,6 +320,24 @@ namespace ColorCube
             base.Draw(gameTime);
         }
 
+        private void SetBackgroundStyle(BackgroundStyle newStyle)
+        {
+            if (backgroundSelect != newStyle)
+            {
+                backgroundSelect = newStyle;
+                ScheduleRedraw();
+            }
+        }
+
+        private void SetProjectionType(ProjectionType newType)
+        {
+            if (projectionType != newType)
+            {
+                projectionType = newType;
+                UpdateViewMatrixes();
+            }
+        }
+
         private void SetColorDisplayMode(ColorsDisplayMode newMode)
         {
             if (newMode != colorsDisplayMode)
@@ -351,6 +375,14 @@ namespace ColorCube
 
                 colorInstanceBuffer.SetData(particlesVerts);
             }
+
+            ScheduleRedraw();
+        }
+
+        private void ScheduleRedraw()
+        {
+            // Two for double buffering to work correctly
+            forceDrawFrames = 2;
         }
 
         private enum ColorsDisplayMode

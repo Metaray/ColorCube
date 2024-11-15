@@ -365,6 +365,8 @@ namespace ColorCube
 
                 if (colorInstanceBuffer == null || colorInstanceBuffer.VertexCount != particlesVerts.Length)
                 {
+                    colorInstanceBuffer?.Dispose();
+
                     colorInstanceBuffer = new VertexBuffer(
                         GraphicsDevice,
                         PointCloud.ParticleInstanceDeclaration,

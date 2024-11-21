@@ -9,12 +9,14 @@ namespace ColorCube
 {
     public class Game1 : Game
     {
-        private readonly GraphicsDeviceManager graphics;
+        private readonly GraphicsDeviceManager graphicsManager;
         private Effect spatialColorEffect;
         private Effect particlesEffect;
         private Matrix mWorld;
         private Matrix mView;
         private Matrix mProjection;
+        private int windowWidth = 900;
+        private int windowHeight = 800;
 
         private MouseState currentMouseState;
         private MouseState lastMouseState;
@@ -38,10 +40,11 @@ namespace ColorCube
 
         public Game1()
         {
-            graphics = new GraphicsDeviceManager(this)
+            graphicsManager = new GraphicsDeviceManager(this)
             {
-                PreferredBackBufferWidth = 900,
-                PreferredBackBufferHeight = 800,
+                PreferredBackBufferWidth = windowWidth,
+                PreferredBackBufferHeight = windowHeight,
+                HardwareModeSwitch = false,
                 //GraphicsProfile = GraphicsProfile.HiDef,
                 //PreferMultiSampling = true,
                 //SynchronizeWithVerticalRetrace = false,
@@ -169,6 +172,13 @@ namespace ColorCube
 
         protected override void Update(GameTime gameTime)
         {
+            UpdateInput();
+
+            base.Update(gameTime);
+        }
+
+        private void UpdateInput()
+        {
             lastMouseState = currentMouseState;
             currentMouseState = Mouse.GetState();
             lastKeyboardState = currentKeyboardState;
@@ -251,7 +261,10 @@ namespace ColorCube
                 SetProjectionType(ProjectionType.Perspective);
             }
 
-            base.Update(gameTime);
+            if (KeyPressed(Keys.Enter))
+            {
+                ToggleFullScreen();
+            }
 
             bool KeyPressed(Keys key)
             {
@@ -345,6 +358,25 @@ namespace ColorCube
                 colorsDisplayMode = newMode;
                 CalculateVertexData();
             }
+        }
+
+        private void ToggleFullScreen()
+        {
+            if (graphicsManager.IsFullScreen)
+            {
+                graphicsManager.PreferredBackBufferWidth = windowWidth;
+                graphicsManager.PreferredBackBufferHeight = windowHeight;
+            }
+            else
+            {
+                windowWidth = GraphicsDevice.Viewport.Width;
+                windowHeight = GraphicsDevice.Viewport.Height;
+                graphicsManager.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
+                graphicsManager.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
+            }
+
+            graphicsManager.ToggleFullScreen();
+            ScheduleRedraw();
         }
 
         private void CalculateVertexData()

@@ -4,7 +4,9 @@
 
 ## Usage
 
-Launch from command line by specifying a file to visualize:
+Launch and drag an image onto the window to draw it's histogram.
+
+Or launch from command line by specifying a file to visualize:
 
 `ColorCube.exe <path to image>`
 
@@ -17,6 +19,8 @@ Launch from command line by specifying a file to visualize:
 - **F3** - Display as CIE xyY
 - **1** - Use orthographic projection
 - **2** - Use perspective projection
+- **Enter** - Toggle fullscreen mode
+- **Drag&drop image** - Load dropped image
 
 ## Screenshots
 
